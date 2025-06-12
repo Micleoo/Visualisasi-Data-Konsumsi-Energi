@@ -72,16 +72,17 @@ elif page == "Clustering":
     df['Cluster'] = kmeans.fit_predict(fitur_scaled)
 
     from bokeh.palettes import Category10
-    colors = [Category10[3][i] for i in df['Cluster']]
-    source = ColumnDataSource(data=dict(
+    palette = Category10[3]
+    df['color'] = df['Cluster'].map(lambda x: palette[x])
+    source_cluster = ColumnDataSource(data=dict(
         x=df['Temperature'],
         y=df['EnergyConsumption'],
-        cluster=[str(i) for i in df['Cluster']],
-        color=colors
+        cluster=df['Cluster'].astype(str),
+        color=df['color']
     ))
 
     p = figure(title="Clustering Konsumsi Energi", x_axis_label="Temperature", y_axis_label="Energy Consumption (kWh)", height=400, width=700)
-    p.circle('x', 'y', color='color', legend_field='cluster', source=source, size=8)
+    p.circle('x', 'y', color='color', legend_field='cluster', source=source_cluster, size=8)
     st.bokeh_chart(p)
 
 # Visualisasi Interaktif
@@ -94,26 +95,24 @@ elif page == "Visualisasi":
     filtered_df = df[df['Month'] == selected_month]
 
     hourly_avg = filtered_df.groupby("Hour")["EnergyConsumption"].mean().reset_index()
-    source2 = ColumnDataSource(hourly_avg)
+    source_hourly = ColumnDataSource(hourly_avg)
 
     p2 = figure(title=f"Konsumsi Energi per Jam - Bulan {selected_month}",
                 x_axis_label="Jam", y_axis_label="Energy Consumption (kWh)",
                 height=300, width=700)
-    p2.line(x='Hour', y='EnergyConsumption', source=source2, line_width=2)
-    p2.circle(x='Hour', y='EnergyConsumption', source=source2, size=8)
+    p2.line(x='Hour', y='EnergyConsumption', source=source_hourly, line_width=2)
+    p2.circle(x='Hour', y='EnergyConsumption', source=source_hourly, size=8)
     p2.add_tools(HoverTool(tooltips=[("Jam", "@Hour"), ("Rata-rata", "@EnergyConsumption{0.00}")]))
     st.bokeh_chart(p2)
 
     # --- Rata-rata konsumsi per bulan (tetap) ---
     st.subheader("📅 Rata-rata Konsumsi Energi per Bulan")
     monthly_avg = df.groupby("Month")["EnergyConsumption"].mean().reset_index()
-    source = ColumnDataSource(monthly_avg)
+    source_monthly = ColumnDataSource(monthly_avg)
 
-    p1 = figure(title="Rata-rata Konsumsi Energi Bulanan",
-                x_axis_label="Bulan", y_axis_label="Energy Consumption",
-                x_range=[str(m) for m in sorted(df['Month'].unique())],
-                height=300, width=700)
-    p1.vbar(x='Month', top='EnergyConsumption', source=source, width=0.5)
+    p1 = figure(title="Rata-rata Konsumsi Energi per Bulan",
+                x_axis_label="Bulan", y_axis_label="Rata-rata EC", height=300, width=700)
+    p1.vbar(x='Month', top='EnergyConsumption', source=source_monthly, width=0.5)
     p1.add_tools(HoverTool(tooltips=[("Bulan", "@Month"), ("Rata-rata", "@EnergyConsumption{0.00}")]))
     st.bokeh_chart(p1)
 
